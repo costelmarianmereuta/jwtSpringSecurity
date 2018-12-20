@@ -1,9 +1,10 @@
 package com.techprimers.security.springbootsecurityjwt.config;
 
-import com.techprimers.security.springbootsecurityjwt.security.JwtAuthentificationEntryPoint;
-import com.techprimers.security.springbootsecurityjwt.security.JwtAuthentificationTokenFilter;
-import com.techprimers.security.springbootsecurityjwt.security.JwtAutheticationProvider;
-import com.techprimers.security.springbootsecurityjwt.security.JwtSuccesHandler;
+import com.techprimers.security.jwtsecurity.security.JwtAuthenticationEntryPoint;
+import com.techprimers.security.jwtsecurity.security.JwtAuthenticationProvider;
+import com.techprimers.security.jwtsecurity.security.JwtAuthenticationTokenFilter;
+import com.techprimers.security.jwtsecurity.security.JwtSuccessHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,37 +21,40 @@ import java.util.Collections;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @EnableWebSecurity
 @Configuration
-public class JWTConfigurerSecurity extends WebSecurityConfigurerAdapter {
+public class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private JwtAutheticationProvider authenticationProvider;
-    private JwtAuthentificationEntryPoint entryPoint;
+
+    @Autowired
+    private JwtAuthenticationProvider authenticationProvider;
+    @Autowired
+    private JwtAuthenticationEntryPoint entryPoint;
 
     @Bean
-    public AuthenticationManager authenticationManager(){
-
+    public AuthenticationManager authenticationManager() {
         return new ProviderManager(Collections.singletonList(authenticationProvider));
     }
 
     @Bean
-    public JwtAuthentificationTokenFilter authentificationTokenFilter(){
-
-        JwtAuthentificationTokenFilter filter=new JwtAuthentificationTokenFilter();
+    public JwtAuthenticationTokenFilter authenticationTokenFilter() {
+        JwtAuthenticationTokenFilter filter = new JwtAuthenticationTokenFilter();
         filter.setAuthenticationManager(authenticationManager());
-        filter.setAuthenticationSuccesHandler(new JwtSuccesHandler());
+        filter.setAuthenticationSuccessHandler(new JwtSuccessHandler());
         return filter;
-
     }
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
         http.csrf().disable()
-                .authorizeRequests().antMatchers("**/rest/").authenticated()
+                .authorizeRequests().antMatchers("**/rest/**").authenticated()
                 .and()
                 .exceptionHandling().authenticationEntryPoint(entryPoint)
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.addFilterBefore(authentificationTokenFilter(),UsernamePasswordAuthenticationFilter.class)
-                ;
+
+        http.addFilterBefore(authenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         http.headers().cacheControl();
+
     }
 }
